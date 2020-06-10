@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN"><!--утовень логирования при чтении этого файла конфигурации-->
+    <Appenders>
+
+        <File name="FILE1" fileName="test.log" createOnDemand="true" ignoreExceptions="false">
+            <PatternLayout pattern="%-5p [%t] %m%n"/>
+        </File>
+
+        <!--Логика обработки сообщений-->
+        <Console name="CONSOLE" target="SYSTEM_OUT">
+            <PatternLayout pattern="Out to Log: %-5p [%t] %m%n"/>
+        </Console>
+
+    </Appenders>
+    <Loggers>
+
+        <Root level="OFF"/>
+
+        <Logger name="com.github.editorbank.certok" level="INFO">
+            <Filters>
+                <!--RegexFilter regex="daysleft.*" onMatch="ACCEPT" onMismatch="DENY"/-->
+            </Filters>
+            <AppenderRef ref="FILE1"/>
+            <AppenderRef ref="CONSOLE"/>
+        </Logger>
+
+    </Loggers>
+</Configuration>

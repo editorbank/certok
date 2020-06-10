@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN"><!--утовень логирования при чтении этого файла конфигурации-->
+    <Properties>
+        <!--Варианты удалённых приёмников информации: FILE1, HTTP1, HTTPS1, SYSLOG1, SYSLOG2 -->
+        <Property name="remote.appender">SYSLOG1</Property>
+
+        <!--Уровень логирования выводимой информации на удалённый приёмник
+        Возможные уровни логирования(в любом регистре, в порядке уменьшения выводимой информации):
+        ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF  -->
+        <Property name="remote.level">INFO</Property>
+
+        <!-- IP-адрес или доменное имя сервера удаленного приёмника -->
+        <Property name="remote.host">localhost</Property>
+
+        <!-- номер порта на сервере удаленного приёмника -->
+        <Property name="remote.port">8514</Property>
+
+        <!-- полное имя файла (только для удаленного приёмника FILE1) -->
+        <Property name="remote.file">${env:CERTOK_HOME}/${remote.host}-${remote.port}.json.log</Property>
+        <!--<Property name="remote.file">\\${remote.host}\share\file.log</Property>-->
+    </Properties>
+    <Appenders>
+
+        <File name="FILE1" fileName="${remote.file}" createOnDemand="true" ignoreExceptions="false">
+            <!--<PatternLayout pattern="%d %-5p [%t] %c{10} - %m%n"/>-->
+            <PatternLayout pattern='{"level":"%p", "thread":"%t", "class":"%c", "message":"%m"}%n'/>
+        </File>
+
+<!--    ВНИМАНИЕ!!! Не используемые аппендеры желательно закоментировать воизбежании их инициализации.
+        <Http name="HTTP1" url="http://${remote.host}:${remote.port}/test/log4j/" ignoreExceptions="false">
+            <ThresholdFilter level="${remote.level}"/>
+            <Property name="X-Java-Runtime" value="$${java:runtime}"/>
+            <JsonLayout properties="true"/>
+        </Http>
+
+        <Http name="HTTPS1" url="https://${remote.host}:${remote.port}/test/log4j/" method="POST"
+              connectTimeoutMillis="2000" readTimeoutMillis="1000" verifyHostname="true" ignoreExceptions="false"
+        >
+            <Property name="X-Java-Runtime" value="$${java:runtime}"/>
+            <JsonLayout properties="true"/>
+            <PatternLayout pattern="%d %-5p [%t] %c{10} - %m%n"/>
+            <SSL>
+                <KeyStore location="localhost.jks" password="secret"/>
+                <TrustStore location="localhost.jks" password="secret"/>
+                < - -
+                пароль от хранилиц для TLS/SSL соединения можно передавать:
+                1. в открытом виде:        password="это_пароль"
+                2. в переменной окружения: passwordEnvironmentVariable="KEYSTORE_PASSWORD"
+                3. в файле:                passwordFile="${sys:user.home}/truststore.pwd"
+                - - >
+            </SSL>
+        </Http>
+-->
+        <Syslog name="SYSLOG1" host="${remote.host}" port="${remote.port}" protocol="TCP" ignoreExceptions="false"/>
+<!--
+        <Syslog name="SYSLOG2" host="${remote.host}" port="${remote.port}" protocol="TCP" ignoreExceptions="false"
+                format="RFC5424" facility="LOCAL0" appName="CertOk" newLine="true" messageId="DaysLeft"
+                immediateFlush="true"
+                includeMDC="true" enterpriseNumber="18060" id="App"
+        >
+            <SSL>
+                <KeyStore location="localhost.jks" password="secret"/>
+                <TrustStore location="localhost.jks" password="secret"/>
+            </SSL>
+        </Syslog>
+
+        <Socket name="SOCKET" host="${remote.host}" port="${remote.port}" immediateFlush="false"
+                ignoreExceptions="false">
+            <JSONLayout eventEol="true" compact="true"/>
+        </Socket>
+-->
+
+        <!--Логика обработки сообщений-->
+        <Console name="CONSOLE" target="SYSTEM_OUT">
+        </Console>
+
+        <File name="FAILLOG" fileName="${env:CERTOK_HOME}/fail.log" createOnDemand="true">
+            <PatternLayout pattern="%d %-5p [%t] %c{10} - %m%n"/>
+        </File>
+
+        <File name="SENDLOG" fileName="${env:CERTOK_HOME}/send.log" createOnDemand="true">
+            <PatternLayout pattern="%d %-5p [%t] %c{10} - %m%n"/>
+        </File>
+
+        <Failover name="FAILOVER" primary="${remote.appender}">
+            <Failovers>
+                <AppenderRef ref="FAILLOG"/>
+                <AppenderRef ref="CONSOLE"/>
+            </Failovers>
+        </Failover>
+
+        <Async name="ASYNC">
+            <AppenderRef ref="SENDLOG"/>
+            <AppenderRef ref="FAILOVER"/>
+            <AppenderRef ref="CONSOLE"/>
+        </Async>
+
+    </Appenders>
+    <Loggers>
+
+        <Root level="ERROR" />
+
+        <Logger name="com.github.editorbank.certok" level="${remote.level}">
+            <!--
+            <Filters>
+                <RegexFilter regex="daysleft.*" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+            -->
+            <AppenderRef ref="ASYNC"/>
+        </Logger>
+
+    </Loggers>
+</Configuration>
